@@ -1,1 +1,462 @@
-<script>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PirCAL</title>
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/tRS10Nr4/1-A2.png">
+    <style>
+        /* LINESeedKR-Bd 폰트 임포트 */
+        @font-face {
+            font-family: 'LINESeedKR-Bd';
+            src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_11-01@1.0/LINESeedKR-Bd.woff2') format('woff2');
+            font-weight: 700;
+            font-style: normal;
+        }
+
+        /* 폰트 및 디자인 설정 */
+        body {
+            font-family: 'LINESeedKR-Bd', 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #FFFFFF;
+            color: #000000;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        h2 {
+            text-align: center;
+            font-weight: normal;
+            margin-bottom: 40px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #555555;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            border: 1px solid #CCCCCC;
+            border-radius: 8px;
+            background-color: #F9F9F9;
+            font-size: 16px;
+            outline: none;
+            transition: border 0.2s ease-in-out;
+            font-family: 'LINESeedKR-Bd', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        input:focus {
+            border: 1px solid #007AFF;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-bottom: 10px;
+            background-color: #fc3c1c;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            font-family: 'LINESeedKR-Bd', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        button:hover {
+            background-color: #ed3b14;
+        }
+
+        /* 결과 영역 초기에는 숨김 */
+        .result {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #F2F2F7;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'LINESeedKR-Bd', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .result p {
+            margin: 10px 0;
+        }
+
+        a {
+            color: #007AFF;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 500px) {
+            .container {
+                margin: 20px;
+                padding: 10px;
+            }
+
+            h2 {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2 id="title">PriCAL</h2>
+
+        <!-- 언어 선택 -->
+        <label for="language" id="languageLabel">언어 선택:</label>
+        <select id="language" onchange="changeLanguage()">
+            <option value="ko">한국인</option>
+            <option value="en">English</option>
+        </select>
+
+        <!-- 통화 선택 -->
+        <label for="currency" id="currencyLabel">통화 선택:</label>
+        <select id="currency">
+            <option value="KRW">₩ (KRW)</option>
+            <option value="USD">$ (USD)</option>
+            <option value="EUR">€ (EUR)</option>
+            <!-- 필요한 경우 더 많은 통화를 추가하세요 -->
+        </select>
+
+        <!-- 시작 날짜 선택 -->
+        <label for="startDate" id="startDateLabel">시작 날짜 선택:</label>
+        <input type="date" id="startDate" required>
+
+        <!-- 기간 입력 -->
+        <label for="duration" id="durationLabel">기간 입력:</label>
+        <input type="number" id="duration" placeholder="기간을 입력하세요" required>
+
+        <!-- 시간 단위 선택 -->
+        <label for="timeUnit" id="timeUnitLabel">시간 단위 선택:</label>
+        <select id="timeUnit">
+            <option value="days">일</option>
+            <option value="weeks">주</option>
+            <option value="months">월</option>
+            <option value="years">년</option>
+        </select>
+
+        <!-- 가격 입력 -->
+        <label for="price" id="priceLabel">가격 입력 (총 금액):</label>
+        <input type="text" id="price" placeholder="총 가격을 입력하세요" required>
+
+        <!-- 할인율 입력 -->
+        <label for="discount" id="discountLabel">할인율 (%):</label>
+        <input type="number" id="discount" placeholder="할인율을 입력하세요" value="0">
+
+        <!-- 세율 입력 제거(주석 처리) -->
+        <!--
+        <label for="tax">세율 (%):</label>
+        <input type="number" id="tax" placeholder="세율을 입력하세요" value="0">
+        -->
+
+        <button onclick="calculate()" id="calculateBtn">계산하기</button>
+
+        <!-- 결과 공유 버튼 -->
+        <button onclick="shareResult()" id="shareBtn">결과 공유하기</button>
+
+        <!-- 결과 인쇄/저장 버튼 -->
+        <button onclick="printResult()" id="printBtn">결과 인쇄/저장하기</button>
+
+        <!-- 고객 지원 링크 수정 -->
+        <p style="text-align:center;">
+            <span id="supportText">문의사항이 있으신가요? </span>
+            <a href="mailto:support@example.com" id="supportLink">고객 지원에 문의하기</a>
+        </p>
+
+        <!-- 결과 영역 -->
+        <div class="result" id="result"></div>
+
+        <!-- 알림 설정 제거(주석 처리) -->
+        <!--
+        <label for="notification">알림 설정 (종료일 알림):</label>
+        <input type="checkbox" id="notification">
+        -->
+
+        <!-- 계산 내역 -->
+        <h3 id="historyTitle">계산 내역</h3>
+        <ul id="history"></ul>
+    </div>
+
+    <script>
+        // 다국어 지원을 위한 텍스트 객체
+        const translations = {
+            ko: {
+                title: "PriCAL",
+                languageLabel: "언어 선택:",
+                currencyLabel: "통화 선택:",
+                startDateLabel: "시작 날짜 선택:",
+                durationLabel: "기간 입력:",
+                timeUnitLabel: "시간 단위 선택:",
+                priceLabel: "가격 입력 (총 금액):",
+                discountLabel: "할인율 (%):",
+                calculateBtn: "계산하기",
+                shareBtn: "결과 공유하기",
+                printBtn: "결과 인쇄/저장하기",
+                supportText: "문의사항이 있으신가요?",
+                supportLink: "고객 지원에 문의하기",
+                historyTitle: "계산 내역",
+                placeholders: {
+                    duration: "기간을 입력하세요",
+                    price: "총 가격을 입력하세요",
+                    discount: "할인율을 입력하세요"
+                },
+                timeUnits: {
+                    days: "일",
+                    weeks: "주",
+                    months: "월",
+                    years: "년"
+                },
+                resultMessages: {
+                    invalidInput: "유효한 값을 입력하세요!",
+                    endDate: "서비스 종료일:",
+                    finalPrice: "최종 금액:",
+                    pricePerDay: "하루당 가격:"
+                },
+                shareError: "이 브라우저는 공유 기능을 지원하지 않습니다."
+            },
+            en: {
+                title: "PriCAL",
+                languageLabel: "Select Language:",
+                currencyLabel: "Select Currency:",
+                startDateLabel: "Select Start Date:",
+                durationLabel: "Enter Duration:",
+                timeUnitLabel: "Select Time Unit:",
+                priceLabel: "Enter Price (Total Amount):",
+                discountLabel: "Discount Rate (%):",
+                calculateBtn: "Calculate",
+                shareBtn: "Share Result",
+                printBtn: "Print/Save Result",
+                supportText: "Have questions?",
+                supportLink: "Contact Support",
+                historyTitle: "Calculation History",
+                placeholders: {
+                    duration: "Enter duration",
+                    price: "Enter total price",
+                    discount: "Enter discount rate"
+                },
+                timeUnits: {
+                    days: "Days",
+                    weeks: "Weeks",
+                    months: "Months",
+                    years: "Years"
+                },
+                resultMessages: {
+                    invalidInput: "Please enter valid values!",
+                    endDate: "Service End Date:",
+                    finalPrice: "Final Price:",
+                    pricePerDay: "Price per Day:"
+                },
+                shareError: "This browser does not support the share function."
+            }
+        };
+
+        // 현재 언어 설정
+        let currentLanguage = 'ko';
+
+        // 언어 변경 함수
+        function changeLanguage() {
+            currentLanguage = document.getElementById('language').value;
+            const texts = translations[currentLanguage];
+
+            // 레이블 및 버튼 텍스트 변경
+            document.getElementById('title').innerText = texts.title;
+            document.getElementById('languageLabel').innerText = texts.languageLabel;
+            document.getElementById('currencyLabel').innerText = texts.currencyLabel;
+            document.getElementById('startDateLabel').innerText = texts.startDateLabel;
+            document.getElementById('durationLabel').innerText = texts.durationLabel;
+            document.getElementById('timeUnitLabel').innerText = texts.timeUnitLabel;
+            document.getElementById('priceLabel').innerText = texts.priceLabel;
+            document.getElementById('discountLabel').innerText = texts.discountLabel;
+            document.getElementById('calculateBtn').innerText = texts.calculateBtn;
+            document.getElementById('shareBtn').innerText = texts.shareBtn;
+            document.getElementById('printBtn').innerText = texts.printBtn;
+            document.getElementById('supportText').innerText = texts.supportText + ' ';
+            document.getElementById('supportLink').innerText = texts.supportLink;
+            document.getElementById('historyTitle').innerText = texts.historyTitle;
+
+            // 플레이스홀더 텍스트 변경
+            document.getElementById('duration').placeholder = texts.placeholders.duration;
+            document.getElementById('price').placeholder = texts.placeholders.price;
+            document.getElementById('discount').placeholder = texts.placeholders.discount;
+
+            // 시간 단위 옵션 변경
+            const timeUnitSelect = document.getElementById('timeUnit');
+            timeUnitSelect.options[0].text = texts.timeUnits.days;
+            timeUnitSelect.options[1].text = texts.timeUnits.weeks;
+            timeUnitSelect.options[2].text = texts.timeUnits.months;
+            timeUnitSelect.options[3].text = texts.timeUnits.years;
+
+            // 계산 결과 초기화 및 숨기기
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('result').style.display = 'none';
+
+            displayHistory();
+        }
+
+        // 통화 형식 지정
+        function formatCurrency(value, currency) {
+            return new Intl.NumberFormat(currentLanguage === 'ko' ? 'ko-KR' : 'en-US', { style: 'currency', currency: currency }).format(value);
+        }
+
+        // 가격 입력 포맷팅
+        document.getElementById('price').addEventListener('input', function (e) {
+            let value = e.target.value;
+            value = value.replace(/,/g, ''); // 콤마 제거
+            if (!isNaN(value) && value.length > 0) {
+                e.target.value = parseInt(value).toLocaleString(currentLanguage === 'ko' ? 'ko-KR' : 'en-US'); // 언어에 맞게 포맷팅
+            } else {
+                e.target.value = '';
+            }
+        });
+
+        function calculate() {
+            const texts = translations[currentLanguage];
+
+            let currency = document.getElementById('currency').value;
+            let startDateInput = document.getElementById('startDate').value;
+            let duration = parseInt(document.getElementById('duration').value);
+            let timeUnit = document.getElementById('timeUnit').value;
+            let price = document.getElementById('price').value.replace(/,/g, '');
+            let discountRate = parseFloat(document.getElementById('discount').value) || 0;
+            // 세율 제거
+            // let taxRate = parseFloat(document.getElementById('tax').value) || 0;
+
+            price = parseFloat(price);
+            if (!startDateInput || isNaN(price) || isNaN(duration) || duration <= 0 || price <= 0) {
+                document.getElementById('result').innerHTML = texts.resultMessages.invalidInput;
+                document.getElementById('result').style.display = 'block';
+                return;
+            }
+
+            // 시작 날짜
+            let startDate = new Date(startDateInput);
+
+            // 기간 계산
+            let endDate = new Date(startDate);
+            switch(timeUnit) {
+                case 'days':
+                    endDate.setDate(startDate.getDate() + duration);
+                    break;
+                case 'weeks':
+                    endDate.setDate(startDate.getDate() + (duration * 7));
+                    break;
+                case 'months':
+                    endDate.setMonth(startDate.getMonth() + duration);
+                    break;
+                case 'years':
+                    endDate.setFullYear(startDate.getFullYear() + duration);
+                    break;
+            }
+
+            // 할인 적용
+            let discountedPrice = price - (price * (discountRate / 100));
+            // 세율 적용 제거
+            // let finalPrice = discountedPrice + (discountedPrice * (taxRate / 100));
+            let finalPrice = discountedPrice;
+
+            // 하루당 가격 계산
+            let totalDays = (endDate - startDate) / (1000 * 60 * 60 * 24);
+            let pricePerDay = finalPrice / totalDays;
+
+            // 결과 출력
+            let resultHTML = `
+                <p>${texts.resultMessages.endDate} <strong>${endDate.toLocaleDateString(currentLanguage === 'ko' ? 'ko-KR' : 'en-US')}</strong></p>
+                <p>${texts.resultMessages.finalPrice} <strong>${formatCurrency(finalPrice, currency)}</strong></p>
+                <p>${texts.resultMessages.pricePerDay} <strong>${formatCurrency(pricePerDay, currency)}</strong></p>
+            `;
+
+            document.getElementById('result').innerHTML = resultHTML;
+            document.getElementById('result').style.display = 'block';
+
+            // 계산 내역 저장
+            saveHistory({
+                startDate: startDate.toLocaleDateString(currentLanguage === 'ko' ? 'ko-KR' : 'en-US'),
+                endDate: endDate.toLocaleDateString(currentLanguage === 'ko' ? 'ko-KR' : 'en-US'),
+                finalPrice: formatCurrency(finalPrice, currency),
+                pricePerDay: formatCurrency(pricePerDay, currency),
+                language: currentLanguage
+            });
+        }
+
+        // 결과 공유 함수
+        function shareResult() {
+            if (navigator.share) {
+                navigator.share({
+                    title: translations[currentLanguage].title,
+                    text: document.getElementById('result').innerText
+                }).then(() => {
+                    console.log('공유 성공');
+                }).catch((error) => {
+                    console.log('공유 실패:', error);
+                });
+            } else {
+                alert(translations[currentLanguage].shareError);
+            }
+        }
+
+        // 결과 인쇄 함수
+        function printResult() {
+            window.print();
+        }
+
+        // 계산 내역 저장
+        function saveHistory(data) {
+            let history = JSON.parse(localStorage.getItem('calculationHistory')) || [];
+            history.push(data);
+            localStorage.setItem('calculationHistory', JSON.stringify(history));
+            displayHistory();
+        }
+
+        function displayHistory() {
+            const texts = translations[currentLanguage];
+            let history = JSON.parse(localStorage.getItem('calculationHistory')) || [];
+            let historyList = document.getElementById('history');
+            historyList.innerHTML = '';
+            history.forEach(item => {
+                if(item.language === currentLanguage) {
+                    let listItem = document.createElement('li');
+                    listItem.textContent = `${texts.resultMessages.endDate} ${item.endDate}, ${texts.resultMessages.finalPrice} ${item.finalPrice}, ${texts.resultMessages.pricePerDay} ${item.pricePerDay}`;
+                    historyList.appendChild(listItem);
+                }
+            });
+        }
+
+        // 페이지 로드 시 계산 내역 표시 및 언어 설정
+        window.onload = function() {
+            changeLanguage();
+            displayHistory();
+        };
+
+        // 알림 예약 함수 제거(주석 처리)
+        /*
+        function scheduleNotification(endDate) {
+            alert('알림 설정 기능은 현재 브라우저에서 지원되지 않습니다.');
+            // 실제 구현을 위해서는 서비스 워커나 서버 측 기능이 필요합니다.
+        }
+        */
+    </script>
+
+</body>
+</html>
