@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PirCAL</title>
     <link rel="icon" type="image/png" href="https://i.postimg.cc/tRS10Nr4/1-A2.png">
+    <!-- Math.js 라이브러리 추가 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
     <style>
         /* LINESeedKR-Bd 폰트 임포트 */
         @font-face {
@@ -122,6 +124,9 @@
 <body>
 
     <div class="container">
+        <!-- 파비콘 이미지를 제목 위에 추가 -->
+        <img src="https://i.postimg.cc/tRS10Nr4/1-A2.png" alt="Favicon" style="display:block; margin: 0 auto 20px; width: 50px; height: 50px;">
+
         <h2 id="title">PriCAL</h2>
 
         <!-- 언어 선택 -->
@@ -146,7 +151,7 @@
 
         <!-- 기간 입력 -->
         <label for="duration" id="durationLabel">기간 입력:</label>
-        <input type="number" id="duration" placeholder="기간을 입력하세요" required>
+        <input type="text" id="duration" placeholder="기간을 입력하세요" required>
 
         <!-- 시간 단위 선택 -->
         <label for="timeUnit" id="timeUnitLabel">시간 단위 선택:</label>
@@ -165,12 +170,6 @@
         <label for="discount" id="discountLabel">할인율 (%):</label>
         <input type="number" id="discount" placeholder="할인율을 입력하세요" value="0">
 
-        <!-- 세율 입력 제거(주석 처리) -->
-        <!--
-        <label for="tax">세율 (%):</label>
-        <input type="number" id="tax" placeholder="세율을 입력하세요" value="0">
-        -->
-
         <button onclick="calculate()" id="calculateBtn">계산하기</button>
 
         <!-- 결과 공유 버튼 -->
@@ -187,12 +186,6 @@
 
         <!-- 결과 영역 -->
         <div class="result" id="result"></div>
-
-        <!-- 알림 설정 제거(주석 처리) -->
-        <!--
-        <label for="notification">알림 설정 (종료일 알림):</label>
-        <input type="checkbox" id="notification">
-        -->
 
         <!-- 계산 내역 -->
         <h3 id="historyTitle">계산 내역</h3>
@@ -331,19 +324,49 @@
             }
         });
 
+        // 기간 입력 필드에 이벤트 리스너 추가
+        document.getElementById('duration').addEventListener('input', function (e) {
+            let value = e.target.value.replace(/,/g, '');
+            // 수식 평가 시도를 위해 try-catch 블록 사용
+            try {
+                // 수식을 평가하여 결과를 얻음
+                let result = math.evaluate(value);
+                if (!isNaN(result)) {
+                    // 결과를 세 자리마다 콤마로 포맷팅하여 표시
+                    e.target.value = result.toLocaleString(currentLanguage === 'ko' ? 'ko-KR' : 'en-US');
+                } else {
+                    e.target.value = value;
+                }
+            } catch {
+                // 유효하지 않은 수식인 경우 그대로 표시
+                e.target.value = value;
+            }
+        });
+
         function calculate() {
             const texts = translations[currentLanguage];
 
             let currency = document.getElementById('currency').value;
             let startDateInput = document.getElementById('startDate').value;
-            let duration = parseInt(document.getElementById('duration').value);
+            let durationInput = document.getElementById('duration').value.replace(/,/g, '');
             let timeUnit = document.getElementById('timeUnit').value;
-            let price = document.getElementById('price').value.replace(/,/g, '');
+            let priceInput = document.getElementById('price').value.replace(/,/g, '');
             let discountRate = parseFloat(document.getElementById('discount').value) || 0;
-            // 세율 제거
-            // let taxRate = parseFloat(document.getElementById('tax').value) || 0;
 
+            // 수식 평가를 위해 math.js 사용
+            let duration, price;
+            try {
+                duration = math.evaluate(durationInput);
+                price = math.evaluate(priceInput);
+            } catch {
+                document.getElementById('result').innerHTML = texts.resultMessages.invalidInput;
+                document.getElementById('result').style.display = 'block';
+                return;
+            }
+
+            duration = parseFloat(duration);
             price = parseFloat(price);
+
             if (!startDateInput || isNaN(price) || isNaN(duration) || duration <= 0 || price <= 0) {
                 document.getElementById('result').innerHTML = texts.resultMessages.invalidInput;
                 document.getElementById('result').style.display = 'block';
@@ -372,8 +395,6 @@
 
             // 할인 적용
             let discountedPrice = price - (price * (discountRate / 100));
-            // 세율 적용 제거
-            // let finalPrice = discountedPrice + (discountedPrice * (taxRate / 100));
             let finalPrice = discountedPrice;
 
             // 하루당 가격 계산
@@ -396,7 +417,8 @@
                 endDate: endDate.toLocaleDateString(currentLanguage === 'ko' ? 'ko-KR' : 'en-US'),
                 finalPrice: formatCurrency(finalPrice, currency),
                 pricePerDay: formatCurrency(pricePerDay, currency),
-                language: currentLanguage
+                language: currentLanguage,
+                duration: durationInput  // 입력한 기간 수식 저장
             });
         }
 
@@ -448,14 +470,6 @@
             changeLanguage();
             displayHistory();
         };
-
-        // 알림 예약 함수 제거(주석 처리)
-        /*
-        function scheduleNotification(endDate) {
-            alert('알림 설정 기능은 현재 브라우저에서 지원되지 않습니다.');
-            // 실제 구현을 위해서는 서비스 워커나 서버 측 기능이 필요합니다.
-        }
-        */
     </script>
 
 </body>
